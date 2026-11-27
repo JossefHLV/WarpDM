@@ -1,0 +1,32 @@
+{
+  "name": "warpdm",
+  "version": "3.5.0",
+  "description": "WarpDM (Warp Download Manager) — Fast, clean open-source file & 4K video download manager for Windows",
+  "type": "module",
+  "main": "src/core/engine.mjs",
+  "bin": {
+    "warpdm": "src/cli/hogra.mjs"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "cli": "node src/cli/hogra.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JossefHLV/WarpDM.git"
+  },
+  "keywords": [
+    "download-manager",
+    "warpdm",
+    "download-accelerator",
+    "multi-segment",
+    "work-stealing",
+    "youtube-downloader",
+    "hls",
+    "dash",
+    "windows"
+  ],
+  "author": "JossefHLV",
+  "license": "MIT"
+}

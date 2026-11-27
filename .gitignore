@@ -1,0 +1,38 @@
+# Local user databases, downloads, & temporary state
+data/
+downloads/
+data_*/
+dl_*/
+downloads_*/
+*.db
+*.db-shm
+*.db-wal
+*.part
+*.hogra_tmp
+*.warpdm_tmp
+
+# Bundled runtimes & compiled Windows binaries (Published via GitHub Releases)
+runtime/
+build_stage/
+payload.zip
+*.exe
+*.msi
+*.zip
+*.xpi
+
+# Local research & legacy prototype folders (Never committed to public repo)
+build.exe
+analysis/
+rea-reference/
+crates/
+target/
+Cargo.toml
+Cargo.lock
+
+# Node & OS metadata
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Internal legacy notes
+docs/

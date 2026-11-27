@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="cCapL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#35D5E8"/>
+      <stop offset="100%" stop-color="#0E769C"/>
+    </linearGradient>
+    <linearGradient id="cCapR" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E769C"/>
+      <stop offset="100%" stop-color="#35D5E8"/>
+    </linearGradient>
+    <linearGradient id="cBrightMid" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6AECFC"/>
+      <stop offset="100%" stop-color="#18ACCE"/>
+    </linearGradient>
+    <linearGradient id="cHero" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#35D5E8"/>
+      <stop offset="100%" stop-color="#6AECFC"/>
+    </linearGradient>
+    <linearGradient id="wLeft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F3F5F7"/>
+    </linearGradient>
+    <linearGradient id="wRight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#CBD8E6"/>
+      <stop offset="100%" stop-color="#A4B6CA"/>
+    </linearGradient>
+  </defs>
+  <polygon fill="#1A2634" points="212,260 386,260 308,422"/>
+  <polygon fill="#1A2634" points="614,260 788,260 692,422"/>
+  <polygon fill="url(#cCapL)" points="102,136 326,136 388,260 164,260"/>
+  <polygon fill="url(#cCapR)" points="674,136 898,136 836,260 612,260"/>
+  <polygon fill="url(#cCapL)" points="102,136 172,260 356,686 226,686 42,254"/>
+  <polygon fill="url(#wRight)" points="500,594 568,476 632,622 500,894"/>
+  <polygon fill="url(#wLeft)" points="432,476 500,594 500,894 368,622"/>
+  <polygon fill="url(#cBrightMid)" points="436,136 564,136 774,686 644,686"/>
+  <polygon fill="url(#cBrightMid)" points="898,136 958,254 774,686 644,686 828,260"/>
+  <polygon fill="url(#cHero)" points="226,686 436,136 564,136 356,686"/>
+</svg>

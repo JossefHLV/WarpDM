@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download File Info — WarpDM</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3.5">
+  <style>
+    :root {
+      --bg-primary: #111820;
+      --bg-secondary: #161f2a;
+      --bg-tertiary: #1f2b3a;
+      --border: #35d5e833;
+      --border-solid: #263547;
+      --text: #f3f5f7;
+      --muted: #94a3b8;
+      --accent: #189ab4;
+      --accent-light: #35d5e8;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text);
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      padding: 16px 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      overflow: hidden;
+    }
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-solid);
+      padding-bottom: 11px;
+      margin-bottom: 13px;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-row img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .title-main {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    .title-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    .meta-pills {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 12px;
+      background: var(--bg-tertiary);
+      color: var(--muted);
+      border: 1px solid var(--border-solid);
+    }
+    .pill-yes {
+      background: rgba(16, 185, 129, 0.16);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    .pill-size {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-light);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .url-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-solid);
+      border-radius: 6px;
+      padding: 8px 11px;
+      font-size: 11.5px;
+      color: var(--accent-light);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 12px;
+      user-select: text;
+    }
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .row-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px 11px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-solid);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12.5px;
+      outline: none;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent-light);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+    }
+    .folder-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      padding: 8px 15px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #22b8d6, #117a98);
+      color: #fff;
+      border-color: rgba(53, 213, 232, 0.45);
+    }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text);
+      border-color: var(--border-solid);
+    }
+    .btn-secondary:hover { background: #334155; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border-solid);
+    }
+    .btn-ghost:hover { color: var(--text); background: var(--bg-secondary); }
+    .footer {
+      border-top: 1px solid var(--border-solid);
+      padding-top: 11px;
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chk-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--muted);
+      cursor: pointer;
+      margin: 0;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="top-header">
+    <div class="brand-row">
+      <img src="/assets/logo48.png?v=3.5" alt="WarpDM">
+      <div>
+        <div class="title-main">Download File Info</div>
+        <div id="subStatus" class="title-sub">Checking file details...</div>
+      </div>
+    </div>
+    <div class="meta-pills">
+      <span id="sizeBadge" class="pill pill-size">Probing...</span>
+      <span id="resumeBadge" class="pill">Checking...</span>
+    </div>
+  </div>
+
+  <div id="urlDisplay" class="url-box">https://...</div>
+
+  <div class="form-grid">
+    <div id="videoQualityGroup" class="hidden">
+      <label for="qualitySelect">Video / Audio Stream Format</label>
+      <select id="qualitySelect">
+        <option value="best">Best Quality (Auto 4K / 1080p MP4)</option>
+        <option value="1080p">1080p Full HD (MP4)</option>
+        <option value="720p">720p HD (MP4)</option>
+        <option value="480p">480p SD (MP4)</option>
+        <option value="audio-mp3">Audio Only — MP3</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="filenameInput">Save File As</label>
+      <input type="text" id="filenameInput" spellcheck="false">
+    </div>
+
+    <div class="row-2col">
+      <div>
+        <label for="categorySelect">Category</label>
+        <select id="categorySelect">
+          <option value="General">General</option>
+          <option value="Compressed">Compressed</option>
+          <option value="Documents">Documents</option>
+          <option value="Music">Music</option>
+          <option value="Programs">Programs</option>
+          <option value="Video">Video</option>
+        </select>
+      </div>
+      <div>
+        <label for="connsSelect">Max Connections</label>
+        <select id="connsSelect">
+          <option value="1">1 Connection</option>
+          <option value="4">4 Connections</option>
+          <option value="8" selected>8 Connections</option>
+          <option value="16">16 Connections</option>
+          <option value="32">32 Connections</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label for="folderInput">Save To Folder</label>
+      <div class="folder-row">
+        <input type="text" id="folderInput" spellcheck="false">
+        <button id="btnBrowse" type="button" class="btn btn-secondary">Browse...</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <label class="chk-row">
+      <input type="checkbox" id="chkDontAsk">
+      <span>Start automatically next time</span>
+    </label>
+    <div class="btn-group">
+      <button id="btnCancel" type="button" class="btn btn-ghost">Cancel</button>
+      <button id="btnLater" type="button" class="btn btn-secondary">Download Later</button>
+      <button id="btnStart" type="button" class="btn btn-primary">Start Download</button>
+    </div>
+  </div>
+
+  <script>
+    try {
+      const targetW = 615;
+      const targetH = 565;
+      window.resizeTo(targetW, targetH);
+      const left = Math.max(40, Math.round((screen.availWidth - targetW) / 2));
+      const top = Math.max(40, Math.round((screen.availHeight - targetH) / 2));
+      window.moveTo(left, top);
+    } catch (_) {}
+
+    const params = new URLSearchParams(window.location.search);
+    const approvalId = params.get("id");
+
+    const urlDisplay = document.getElementById("urlDisplay");
+    const subStatus = document.getElementById("subStatus");
+    const sizeBadge = document.getElementById("sizeBadge");
+    const resumeBadge = document.getElementById("resumeBadge");
+    const videoQualityGroup = document.getElementById("videoQualityGroup");
+    const qualitySelect = document.getElementById("qualitySelect");
+    const filenameInput = document.getElementById("filenameInput");
+    const categorySelect = document.getElementById("categorySelect");
+    const connsSelect = document.getElementById("connsSelect");
+    const folderInput = document.getElementById("folderInput");
+
+    let userEditedFilename = false;
+    let userEditedFolder = false;
+    let currentQualities = [];
+    let selectedApproxBytes = null;
+    let redirectedToProgress = false;
+
+    filenameInput.addEventListener("input", () => { userEditedFilename = true; });
+    folderInput.addEventListener("input", () => { userEditedFolder = true; });
+
+    function formatBytes(b) {
+      if (!b || b <= 0) return "Unknown Size";
+      const k = 1024;
+      const u = ["B", "KB", "MB", "GB", "TB"];
+      const i = Math.min(u.length - 1, Math.floor(Math.log(b) / Math.log(k)));
+      return (b / Math.pow(k, i)).toFixed(2) + " " + u[i];
+    }
+
+    // Update filename extension & size badge dynamically when user switches MP4 <-> MP3 quality!
+    qualitySelect.addEventListener("change", () => {
+      const qVal = qualitySelect.value;
+      const matched = currentQualities.find((q) => q.id === qVal);
+      if (matched?.approxBytes) {
+        selectedApproxBytes = matched.approxBytes;
+        sizeBadge.textContent = `~${formatBytes(matched.approxBytes)}`;
+      }
+      if (!userEditedFilename && filenameInput.value) {
+        const newExt = qVal === "audio-mp3" ? ".mp3" : qVal === "audio-m4a" ? ".m4a" : ".mp4";
+        filenameInput.value = filenameInput.value.replace(/\.(mp4|mkv|webm|mp3|m4a)$/i, "") + newExt;
+        categorySelect.value = qVal.startsWith("audio-") ? "Music" : "Video";
+      }
+    });
+
+    function applyData(d) {
+      urlDisplay.textContent = d.url;
+      urlDisplay.title = d.url;
+
+      if (!userEditedFilename && d.filename) filenameInput.value = d.filename;
+      if (!userEditedFolder && d.folder) folderInput.value = d.folder;
+      if (d.category) categorySelect.value = d.category;
+      if (d.maxConnections) connsSelect.value = String(d.maxConnections);
+      if (d.totalBytes) selectedApproxBytes = d.totalBytes;
+
+      if (d.isVideo) {
+        videoQualityGroup.classList.remove("hidden");
+        if (Array.isArray(d.qualities) && d.qualities.length > 0) {
+          currentQualities = d.qualities;
+          const prevVal = qualitySelect.value || d.quality || "best";
+          qualitySelect.innerHTML = "";
+          for (const q of d.qualities) {
+            const opt = document.createElement("option");
+            opt.value = q.id;
+            opt.textContent = q.approxBytes ? `${q.label} (~${formatBytes(q.approxBytes)})` : q.label;
+            qualitySelect.appendChild(opt);
+          }
+          if ([...qualitySelect.options].some((o) => o.value === prevVal)) {
+            qualitySelect.value = prevVal;
+          }
+          const matched = d.qualities.find((q) => q.id === qualitySelect.value);
+          if (matched?.approxBytes) selectedApproxBytes = matched.approxBytes;
+        } else if (d.quality) {
+          qualitySelect.value = d.quality;
+        }
+      }
+
+      if (d.probing) {
+        subStatus.textContent = "Probing server capabilities & stream size...";
+        sizeBadge.textContent = "Probing...";
+        resumeBadge.textContent = "Checking...";
+      } else {
+        subStatus.textContent = d.probeError ? "Ready to download" : "Ready — review details & click Start Download";
+        const dispSize = selectedApproxBytes || d.totalBytes;
+        sizeBadge.textContent = dispSize ? formatBytes(dispSize) : (d.isVideo ? "Stream" : "Unknown Size");
+        if (d.isVideo || d.acceptsRanges) {
+          resumeBadge.textContent = "Resume: Yes";
+          resumeBadge.className = "pill pill-yes";
+        } else {
+          resumeBadge.textContent = "Single Stream";
+          resumeBadge.className = "pill";
+        }
+      }
+    }
+
+    async function loadInitial() {
+      if (!approvalId) return window.close();
+      const res = await fetch(`/api/approval?id=${encodeURIComponent(approvalId)}`);
+      if (!res.ok) return window.close();
+      const json = await res.json();
+      if (json.data) applyData(json.data);
+      filenameInput.focus();
+      filenameInput.select();
+    }
+
+    const ws = new WebSocket(`ws://${window.location.host}/?role=approval`);
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "approval_updated" && msg.data?.id === approvalId) {
+          applyData(msg.data);
+        } else if (msg.type === "approval_resolved" && msg.data?.id === approvalId) {
+          if (!redirectedToProgress && msg.data.mode !== "start") {
+            window.close();
+          } else if (!redirectedToProgress && msg.data.download_id) {
+            redirectedToProgress = true;
+            window.location.replace(`/progress.html?id=${encodeURIComponent(msg.data.download_id)}`);
+          }
+        } else if (msg.type === "app_shutdown") {
+          window.close();
+        }
+      } catch (_) {}
+    };
+
+    document.getElementById("btnBrowse").onclick = async () => {
+      const res = await fetch("/api/browse-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initialDir: folderInput.value.trim() }),
+      });
+      const json = await res.json();
+      if (json.folder) {
+        userEditedFolder = true;
+        folderInput.value = json.folder;
+      }
+    };
+
+    async function submitDecision(mode) {
+      document.getElementById("btnStart").disabled = true;
+      document.getElementById("btnLater").disabled = true;
+      if (mode === "start") redirectedToProgress = true;
+
+      const res = await fetch("/api/approve-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: approvalId,
+          mode,
+          filename: filenameInput.value.trim(),
+          folder: folderInput.value.trim(),
+          quality: qualitySelect.value,
+          total_bytes: selectedApproxBytes || null,
+          max_connections: parseInt(connsSelect.value, 10),
+          disable_future_prompts: document.getElementById("chkDontAsk").checked,
+        }),
+      });
+
+      if (mode === "start") {
+        try {
+          const json = await res.json();
+          if (json.download_id) {
+            window.location.replace(`/progress.html?id=${encodeURIComponent(json.download_id)}`);
+            return;
+          }
+        } catch (_) {}
+      }
+      window.close();
+    }
+
+    document.getElementById("btnStart").onclick = () => submitDecision("start");
+    document.getElementById("btnLater").onclick = () => submitDecision("later");
+    document.getElementById("btnCancel").onclick = () => submitDecision("cancel");
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") submitDecision("cancel");
+      else if (e.key === "Enter" && document.activeElement?.tagName !== "BUTTON") submitDecision("start");
+    });
+
+    loadInitial();
+  </script>
+</body>
+</html>

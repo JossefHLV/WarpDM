@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="warp-dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WarpDM</title>
+  <link rel="stylesheet" href="style.css?v=3.5">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3.5">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo32.png?v=3.5">
+  <link rel="icon" type="image/png" sizes="256x256" href="/assets/logo256.png?v=3.5">
+  <link rel="manifest" href="/manifest.webmanifest?v=3.5">
+</head>
+<body>
+  <div class="desktop-shell" id="desktopShell">
+    <!-- ZONE 1: Native Desktop Top Menu Bar (IDM-style Tasks / File / Downloads / View / Help) -->
+    <nav class="menubar" id="mainMenuBar">
+      <div class="menubar-left">
+        <div class="menu-root" data-menu="tasks">
+          <span class="menu-trigger" data-i18n="menu_tasks">Tasks</span>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="openQuickUrlModal()"><span data-i18n="act_add_new">Add new download...</span><span class="menu-kbd">Ctrl+N</span></div>
+            <div class="menu-item" onclick="openFullAddModal()"><span>Add with File Info...</span></div>
+            <div class="menu-item" onclick="openBatchUrlsModal()"><span>Batch download...</span></div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="openGrabberModal()"><span data-i18n="act_grabber">Site Grabber...</span></div>
+            <div class="menu-item" onclick="openZipModal()"><span>ZIP Inspector...</span></div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="exportUrlList()"><span>Export URLs (.txt)...</span></div>
+            <div class="menu-item" onclick="triggerImportUrlList()"><span>Import URLs (.txt)...</span></div>
+          </div>
+        </div>
+
+        <div class="menu-root" data-menu="file">
+          <span class="menu-trigger" data-i18n="menu_file">File</span>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="actSelected('resume')"><span data-i18n="tb_resume">Resume Download</span></div>
+            <div class="menu-item" onclick="actSelected('pause')"><span data-i18n="tb_stop">Stop / Pause Download</span></div>
+            <div class="menu-item" onclick="actSelected('retry')"><span>Redownload / Retry</span></div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="actSelected('folder')"><span data-i18n="act_open_folder">Open Destination Folder</span></div>
+            <div class="menu-item" onclick="actSelected('hud')"><span>Transfer Details &amp; Segment Map</span></div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="actSelected('remove')"><span data-i18n="tb_delete">Remove from List</span><span class="menu-kbd">Del</span></div>
+            <div class="menu-item danger-text" onclick="actSelected('delete_disk')"><span>Delete File from Disk...</span><span class="menu-kbd">Shift+Del</span></div>
+          </div>
+        </div>
+
+        <div class="menu-root" data-menu="downloads">
+          <span class="menu-trigger" data-i18n="menu_downloads">Downloads</span>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="sendWs({action:'start_queue'})"><span>Resume All Unfinished</span></div>
+            <div class="menu-item" onclick="sendWs({action:'stop_all'})"><span data-i18n="tb_stop_all">Pause / Stop All</span></div>
+            <div class="menu-item" onclick="sendWs({action:'clear_downloads',payload:{mode:'completed'}})"><span data-i18n="tb_del_comp">Delete All Completed</span></div>
+            <div class="menu-item" onclick="sendWs({action:'clear_downloads',payload:{mode:'failed'}})"><span>Clear All Failed</span></div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="openSchedulerModal()"><span data-i18n="tb_scheduler">Scheduler &amp; Queues...</span></div>
+            <div class="menu-item has-sub">
+              <span>⚡ Speed Limiter</span><span class="sub-arrow">▸</span>
+              <div class="menu-submenu">
+                <div class="menu-item" onclick="toggleQuickSpeedLimiter(true)"><span>Turn On Speed Limiter</span></div>
+                <div class="menu-item" onclick="toggleQuickSpeedLimiter(false)"><span>Turn Off (Unlimited)</span></div>
+                <div class="menu-sep"></div>
+                <div class="menu-item" onclick="openSpeedLimiterModal()"><span>Speed Limiter Settings (Custom KB/s)...</span></div>
+              </div>
+            </div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="openOptionsModal('general')"><span data-i18n="tb_options">Options / Configuration...</span></div>
+          </div>
+        </div>
+
+        <div class="menu-root" data-menu="view">
+          <span class="menu-trigger" data-i18n="menu_view">View</span>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="toggleCategoriesSidebar()"><span id="lblToggleCatTree">✓ Show Categories Tree</span></div>
+            <div class="menu-item has-sub">
+              <span>Arrange Files</span><span class="sub-arrow">▸</span>
+              <div class="menu-submenu">
+                <div class="menu-item" onclick="setSort('createdAt','desc')"><span>By Order of Addition</span></div>
+                <div class="menu-item" onclick="setSort('filename','asc')"><span>By File Name</span></div>
+                <div class="menu-item" onclick="setSort('size','desc')"><span>By Size</span></div>
+                <div class="menu-item" onclick="setSort('progress','desc')"><span>By Status / Percentage</span></div>
+                <div class="menu-item" onclick="setSort('eta','asc')"><span>By Time Left</span></div>
+                <div class="menu-item" onclick="setSort('speed','desc')"><span>By Transfer Rate</span></div>
+                <div class="menu-item" onclick="setSort('domain','asc')"><span>By Source Domain</span></div>
+              </div>
+            </div>
+            <div class="menu-item has-sub">
+              <span>Toolbar Style</span><span class="sub-arrow">▸</span>
+              <div class="menu-submenu">
+                <div class="menu-item" onclick="setToolbarMode('large','neon')"><span>Large Buttons • Warp Neon</span></div>
+                <div class="menu-item" onclick="setToolbarMode('large','glass')"><span>Large Buttons • 3D Glass</span></div>
+                <div class="menu-item" onclick="setToolbarMode('small','neon')"><span>Small Compact Toolbar</span></div>
+              </div>
+            </div>
+            <div class="menu-item has-sub">
+              <span>Theme</span><span class="sub-arrow">▸</span>
+              <div class="menu-submenu">
+                <div class="menu-item" onclick="setTheme('warp-dark')"><span>Warp Obsidian Neon (Default)</span></div>
+                <div class="menu-item" onclick="setTheme('idm-dark')"><span>Classic Charcoal Dark</span></div>
+                <div class="menu-item" onclick="setTheme('light')"><span>Crisp Daylight</span></div>
+              </div>
+            </div>
+            <div class="menu-item" onclick="openColumnsModal()"><span>Customize Columns...</span></div>
+            <div class="menu-item has-sub">
+              <span>Language</span><span class="sub-arrow">▸</span>
+              <div class="menu-submenu">
+                <div class="menu-item" onclick="setLanguage('en')"><span>English</span></div>
+                <div class="menu-item" onclick="setLanguage('ar')"><span>العربية (Arabic)</span></div>
+                <div class="menu-item" onclick="setLanguage('fr')"><span>Français</span></div>
+                <div class="menu-item" onclick="setLanguage('es')"><span>Español</span></div>
+                <div class="menu-item" onclick="setLanguage('de')"><span>Deutsch</span></div>
+                <div class="menu-item" onclick="setLanguage('tr')"><span>Türkçe</span></div>
+                <div class="menu-item" onclick="setLanguage('ru')"><span>Русский</span></div>
+                <div class="menu-item" onclick="setLanguage('pt')"><span>Português</span></div>
+                <div class="menu-item" onclick="setLanguage('zh')"><span>简体中文</span></div>
+                <div class="menu-item" onclick="setLanguage('ja')"><span>日本語</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-root" data-menu="help">
+          <span class="menu-trigger" data-i18n="menu_help">Help</span>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="openBrowserWizardModal()"><span>🧩 Connect Browser (1-Click Guide)...</span></div>
+            <div class="menu-item" onclick="sendWs({action:'open_folder',payload:{}})"><span>Open Downloads Folder</span></div>
+            <div class="menu-sep"></div>
+            <div class="menu-item" onclick="openAboutModal()"><span>About WarpDM</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="menubar-right">
+        <div class="search-mini">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Search downloads...">
+        </div>
+        <span id="extConnectChip" class="meta-chip chip-cyan" onclick="openBrowserWizardModal()" title="Set up Browser Extension (Chrome, Brave, Edge, Opera, Firefox)">🧩 Connect Browser</span>
+        <span id="speedCapPill" class="meta-chip" onclick="openSpeedLimiterModal()" title="Speed Limiter">⚡ Limit: Off</span>
+        <span id="globalSpeedPill" class="meta-chip chip-cyan">0.00 MB/s</span>
+        <span id="engineStatus" class="meta-chip chip-online">● Ready</span>
+      </div>
+    </nav>
+
+    <!-- ZONE 2: Iconic IDM-Inspired Graphic Action Toolbar (Neon SVG Icons Stacked Above Labels) -->
+    <header class="action-toolbar" id="actionToolbar">
+      <div class="tb-buttons">
+        <button class="tb-btn" id="btnNewDownload" onclick="openQuickUrlModal()" title="Enter new URL to download (Ctrl+N)">
+          <span class="tb-icon-ring ring-emerald">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_add_url">Add URL</span>
+        </button>
+
+        <button class="tb-btn" id="tbBtnResume" onclick="actSelected('resume')" title="Resume selected unfinished transfer">
+          <span class="tb-icon-ring ring-cyan">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="18 13 12 19 6 13"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_resume">Resume</span>
+        </button>
+
+        <button class="tb-btn" id="tbBtnStop" onclick="actSelected('pause')" title="Pause / stop selected transfer">
+          <span class="tb-icon-ring ring-amber">
+            <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_stop">Stop</span>
+        </button>
+
+        <button class="tb-btn" id="btnStopAll" onclick="sendWs({action:'stop_all'})" title="Pause all active downloads">
+          <span class="tb-icon-ring ring-rose">
+            <svg viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_stop_all">Stop All</span>
+        </button>
+
+        <div class="tb-divider"></div>
+
+        <button class="tb-btn" id="tbBtnDelete" onclick="actSelected('remove')" title="Remove selected downloads from list">
+          <span class="tb-icon-ring ring-slate">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_delete">Delete</span>
+        </button>
+
+        <button class="tb-btn" id="btnClearCompleted" onclick="sendWs({action:'clear_downloads',payload:{mode:'completed'}})" title="Remove all completed rows from list">
+          <span class="tb-icon-ring ring-pink">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><polyline points="9 13 11 15 15 11"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_del_comp">Delete Comp.</span>
+        </button>
+
+        <div class="tb-divider"></div>
+
+        <button class="tb-btn" id="btnSettings" onclick="openOptionsModal('general')" title="WarpDM Configuration &amp; Browser Extension">
+          <span class="tb-icon-ring ring-violet">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_options">Options</span>
+        </button>
+
+        <button class="tb-btn" id="btnScheduler" onclick="openSchedulerModal()" title="Queue Timer &amp; Download Scheduler">
+          <span class="tb-icon-ring ring-purple">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/><line x1="9" y1="2" x2="15" y2="2"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_scheduler">Scheduler</span>
+        </button>
+
+        <button class="tb-btn" id="btnStartQueue" onclick="sendWs({action:'start_queue'})" title="Start Main Download Queue">
+          <span class="tb-icon-ring ring-emerald">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="14" height="14" rx="2"/><path d="M7 20h12a2 2 0 0 0 2-2V8"/><polyline points="10 8 10 14"/><polyline points="7 11 10 14 13 11"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_start_q">Start Queue</span>
+        </button>
+
+        <button class="tb-btn" id="btnStopQueue" onclick="sendWs({action:'stop_all'})" title="Stop Queue Processing">
+          <span class="tb-icon-ring ring-rose">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="13" height="13" rx="2"/><rect x="11" y="11" width="9" height="9" rx="1.5"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_stop_q">Stop Queue</span>
+        </button>
+
+        <div class="tb-divider"></div>
+
+        <button class="tb-btn" id="btnGrabber" onclick="openGrabberModal()" title="Site Grabber Webpage Crawler">
+          <span class="tb-icon-ring ring-cyan">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>
+          </span>
+          <span class="tb-label" data-i18n="tb_grabber">Grabber</span>
+        </button>
+
+        <button class="tb-btn" id="btnSpeedLimiterTb" onclick="openSpeedLimiterModal()" title="Custom Speed Limiter (Exact KB/sec or MB/sec)">
+          <span class="tb-icon-ring ring-cyan">
+            <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </span>
+          <span class="tb-label">Speed Limit</span>
+        </button>
+
+        <button class="tb-btn" id="btnOpenFolder" onclick="sendWs({action:'open_folder',payload:{}})" title="Open Default Downloads Folder">
+          <span class="tb-icon-ring ring-amber">
+            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <span class="tb-label">Folder</span>
+        </button>
+
+        <button class="tb-btn" id="btnConnectBrowserTb" onclick="openBrowserWizardModal()" title="Easy Browser Extension Setup (Chrome, Brave, Edge, Opera, Firefox)">
+          <span class="tb-icon-ring ring-cyan">
+            <svg viewBox="0 0 24 24"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>
+          </span>
+          <span class="tb-label">Browser</span>
+        </button>
+      </div>
+
+      <div class="tb-brand-badge">
+        <img src="/assets/logo128.png?v=3.5" alt="WarpDM">
+        <div class="tb-brand-txt">
+          <span class="tb-brand-name">WarpDM</span>
+          <span class="tb-brand-ver">v3.5.0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ZONE 3 + ZONE 4: Collapsible TreeView Sidebar + Grid-Lined Desktop Data Table -->
+    <div class="workspace-split">
+      <aside class="tree-sidebar" id="treeSidebar">
+        <div class="tree-header">
+          <span data-i18n="cat_header">Categories</span>
+          <button class="tree-close-btn" onclick="toggleCategoriesSidebar()" title="Hide Categories">&times;</button>
+        </div>
+
+        <div class="tree-scroll">
+          <!-- Branch 1: All Downloads -->
+          <div class="tree-branch">
+            <div class="tree-node active" data-state="all" data-cat="all" onclick="selectTreeNode(this)">
+              <span class="twisty" onclick="toggleBranch(event, 'subAll')">▾</span>
+              <span class="t-ico">📁</span>
+              <span class="t-lbl" data-i18n="cat_all">All Downloads</span>
+              <span class="t-cnt" id="cnt-all-all">0</span>
+            </div>
+            <div class="tree-children" id="subAll">
+              <div class="tree-node child" data-state="all" data-cat="compressed" onclick="selectTreeNode(this)"><span class="t-ico">📦</span><span class="t-lbl" data-i18n="cat_comp">Compressed</span><span class="t-cnt" id="cnt-all-compressed">0</span></div>
+              <div class="tree-node child" data-state="all" data-cat="documents" onclick="selectTreeNode(this)"><span class="t-ico">📄</span><span class="t-lbl" data-i18n="cat_docs">Documents</span><span class="t-cnt" id="cnt-all-documents">0</span></div>
+              <div class="tree-node child" data-state="all" data-cat="music" onclick="selectTreeNode(this)"><span class="t-ico">🎵</span><span class="t-lbl" data-i18n="cat_music">Music</span><span class="t-cnt" id="cnt-all-music">0</span></div>
+              <div class="tree-node child" data-state="all" data-cat="programs" onclick="selectTreeNode(this)"><span class="t-ico">💿</span><span class="t-lbl" data-i18n="cat_prog">Programs</span><span class="t-cnt" id="cnt-all-programs">0</span></div>
+              <div class="tree-node child" data-state="all" data-cat="video" onclick="selectTreeNode(this)"><span class="t-ico">🎬</span><span class="t-lbl" data-i18n="cat_video">Video</span><span class="t-cnt" id="cnt-all-video">0</span></div>
+            </div>
+          </div>
+
+          <!-- Branch 2: Unfinished -->
+          <div class="tree-branch">
+            <div class="tree-node" data-state="unfinished" data-cat="all" onclick="selectTreeNode(this)">
+              <span class="twisty" onclick="toggleBranch(event, 'subUnf')">▾</span>
+              <span class="t-ico">⏳</span>
+              <span class="t-lbl" data-i18n="cat_unfinished">Unfinished</span>
+              <span class="t-cnt" id="cnt-unf-all">0</span>
+            </div>
+            <div class="tree-children" id="subUnf">
+              <div class="tree-node child" data-state="unfinished" data-cat="compressed" onclick="selectTreeNode(this)"><span class="t-ico">📦</span><span class="t-lbl" data-i18n="cat_comp">Compressed</span></div>
+              <div class="tree-node child" data-state="unfinished" data-cat="documents" onclick="selectTreeNode(this)"><span class="t-ico">📄</span><span class="t-lbl" data-i18n="cat_docs">Documents</span></div>
+              <div class="tree-node child" data-state="unfinished" data-cat="music" onclick="selectTreeNode(this)"><span class="t-ico">🎵</span><span class="t-lbl" data-i18n="cat_music">Music</span></div>
+              <div class="tree-node child" data-state="unfinished" data-cat="programs" onclick="selectTreeNode(this)"><span class="t-ico">💿</span><span class="t-lbl" data-i18n="cat_prog">Programs</span></div>
+              <div class="tree-node child" data-state="unfinished" data-cat="video" onclick="selectTreeNode(this)"><span class="t-ico">🎬</span><span class="t-lbl" data-i18n="cat_video">Video</span></div>
+            </div>
+          </div>
+
+          <!-- Branch 3: Finished -->
+          <div class="tree-branch">
+            <div class="tree-node" data-state="finished" data-cat="all" onclick="selectTreeNode(this)">
+              <span class="twisty" onclick="toggleBranch(event, 'subFin')">▾</span>
+              <span class="t-ico">✅</span>
+              <span class="t-lbl" data-i18n="cat_finished">Finished</span>
+              <span class="t-cnt" id="cnt-fin-all">0</span>
+            </div>
+            <div class="tree-children" id="subFin">
+              <div class="tree-node child" data-state="finished" data-cat="compressed" onclick="selectTreeNode(this)"><span class="t-ico">📦</span><span class="t-lbl" data-i18n="cat_comp">Compressed</span></div>
+              <div class="tree-node child" data-state="finished" data-cat="documents" onclick="selectTreeNode(this)"><span class="t-ico">📄</span><span class="t-lbl" data-i18n="cat_docs">Documents</span></div>
+              <div class="tree-node child" data-state="finished" data-cat="music" onclick="selectTreeNode(this)"><span class="t-ico">🎵</span><span class="t-lbl" data-i18n="cat_music">Music</span></div>
+              <div class="tree-node child" data-state="finished" data-cat="programs" onclick="selectTreeNode(this)"><span class="t-ico">💿</span><span class="t-lbl" data-i18n="cat_prog">Programs</span></div>
+              <div class="tree-node child" data-state="finished" data-cat="video" onclick="selectTreeNode(this)"><span class="t-ico">🎬</span><span class="t-lbl" data-i18n="cat_video">Video</span></div>
+            </div>
+          </div>
+
+          <!-- Utilities & Queues -->
+          <div class="tree-node" onclick="openGrabberModal()">
+            <span class="twisty-empty"></span>
+            <span class="t-ico">🌐</span>
+            <span class="t-lbl">Grabber projects</span>
+          </div>
+          <div class="tree-node" onclick="openZipModal()">
+            <span class="twisty-empty"></span>
+            <span class="t-ico">🗜️</span>
+            <span class="t-lbl">Remote ZIP Inspector</span>
+          </div>
+
+          <div class="tree-branch">
+            <div class="tree-node" data-state="queue" data-queue="all" onclick="selectTreeNode(this)">
+              <span class="twisty" onclick="toggleBranch(event, 'subQueues')">▾</span>
+              <span class="t-ico">📋</span>
+              <span class="t-lbl">Queues</span>
+            </div>
+            <div class="tree-children" id="subQueues">
+              <div class="tree-node child" data-state="queue" data-queue="main" onclick="selectTreeNode(this)"><span class="t-ico">📥</span><span class="t-lbl">Main download queue</span></div>
+              <div class="tree-node child" data-state="queue" data-queue="scheduled" onclick="selectTreeNode(this)"><span class="t-ico">🕒</span><span class="t-lbl">Scheduled queue</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Interactive Drag-to-Resize Sidebar Splitter -->
+      <div class="sidebar-resizer" id="sidebarResizer" title="Drag left or right to resize Categories panel"></div>
+
+      <!-- ZONE 4: Crisp Grid-Lined Desktop Transfer Table (with Draggable Resizable Columns!) -->
+      <main class="grid-workspace">
+        <div class="grid-scroll" id="gridScroll">
+          <table class="idm-grid-table" id="transferGrid">
+            <colgroup id="transferColGroup">
+              <col data-col-key="chk" style="width: 30px;">
+              <col data-col-key="fname" style="width: 225px;">
+              <col data-col-key="q" data-col="q" style="width: 34px;">
+              <col data-col-key="size" data-col="size" style="width: 84px;">
+              <col data-col-key="status" data-col="status" style="width: 136px;">
+              <col data-col-key="eta" data-col="eta" style="width: 78px;">
+              <col data-col-key="speed" data-col="speed" style="width: 92px;">
+              <col data-col-key="date" data-col="date" style="width: 98px;">
+              <col data-col-key="desc" data-col="desc" style="width: 120px;">
+              <col data-col-key="act" style="width: 106px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-chk"><input type="checkbox" id="selectAllRows" title="Select all"></th>
+                <th class="sortable col-fname" data-sort="filename"><span data-i18n="col_fname">File Name</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="fname"></span></th>
+                <th class="col-q" data-col="q">Q<span class="col-resizer" data-resize-col="q"></span></th>
+                <th class="sortable col-size" data-sort="size" data-col="size"><span data-i18n="col_size">Size</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="size"></span></th>
+                <th class="sortable col-status" data-sort="progress" data-col="status"><span data-i18n="col_status">Status</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="status"></span></th>
+                <th class="sortable col-eta" data-sort="eta" data-col="eta"><span data-i18n="col_eta">Time left</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="eta"></span></th>
+                <th class="sortable col-speed" data-sort="speed" data-col="speed"><span data-i18n="col_rate">Transfer rate</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="speed"></span></th>
+                <th class="sortable col-date" data-sort="createdAt" data-col="date"><span data-i18n="col_date">Last Try Date</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="date"></span></th>
+                <th class="sortable col-desc" data-sort="domain" data-col="desc"><span data-i18n="col_desc">Description / Source</span> <span class="sort-ind"></span><span class="col-resizer" data-resize-col="desc"></span></th>
+                <th class="col-act">Quick Actions<span class="col-resizer" data-resize-col="act"></span></th>
+              </tr>
+            </thead>
+            <tbody id="transferTableBody"></tbody>
+          </table>
+
+          <div id="emptyState" class="empty-state hidden">
+            <img src="/assets/logo256.png?v=3.5" class="empty-logo" alt="WarpDM">
+            <h3>No downloads yet</h3>
+            <p>Click <strong>Add URL</strong> or <a href="#" onclick="openBrowserWizardModal();return false;" style="color:var(--accent-light);font-weight:600;text-decoration:none;">connect your browser</a> for 1-click downloads.</p>
+          </div>
+        </div>
+
+        <!-- Bottom Status Bar -->
+        <footer class="statusbar">
+          <span id="statusSummaryLeft">0 downloads</span>
+          <span id="statusSummaryRight">Ready</span>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- Right-Click Row Context Menu -->
+  <div id="rowContextMenu" class="ctx-menu hidden">
+    <div class="menu-item" onclick="ctxAct('resume')"><span>▶ Resume Download</span></div>
+    <div class="menu-item" onclick="ctxAct('pause')"><span>⏸ Stop / Pause</span></div>
+    <div class="menu-item" onclick="ctxAct('retry')"><span>↻ Redownload / Retry</span></div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" onclick="ctxAct('folder')"><span>📂 Open Folder</span></div>
+    <div class="menu-item" onclick="ctxAct('mini')"><span>↗ Open Live Progress Popup</span></div>
+    <div class="menu-item" onclick="ctxAct('hud')"><span>📊 Transfer Details &amp; Segments</span></div>
+    <div class="menu-item" onclick="ctxAct('copy')"><span>🔗 Copy Download URL</span></div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" onclick="ctxAct('q_main')"><span>📥 Move to Main Queue</span></div>
+    <div class="menu-item" onclick="ctxAct('q_sched')"><span>🕒 Move to Scheduled Queue</span></div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" onclick="ctxAct('remove')"><span>🗑 Remove from List</span></div>
+    <div class="menu-item danger-text" onclick="ctxAct('delete_disk')"><span>❌ Delete File from Disk</span></div>
+  </div>
+
+  <input type="file" id="importUrlFileInput" accept=".txt,.ef2" class="hidden">
+
+  <!-- MODAL 1A: IDM-Style Quick "Enter New Address to Download" (with HTTP Auth!) -->
+  <div id="quickUrlModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 560px;">
+      <div class="modal-header">
+        <div class="modal-title">Enter new address to download</div>
+        <button class="btn-close" onclick="closeModal('quickUrlModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="quickUrlInput">Address (HTTP / HTTPS / YouTube / X / Kick / Stream)</label>
+          <div class="flex-row">
+            <input type="text" id="quickUrlInput" list="recentUrlsList" placeholder="https://...">
+            <datalist id="recentUrlsList"></datalist>
+            <button type="button" class="btn btn-primary" id="btnQuickUrlOk">OK</button>
+          </div>
+        </div>
+        <div class="auth-box">
+          <label class="checkbox-inline" style="margin-bottom:8px;">
+            <input type="checkbox" id="chkQuickAuth">
+            <span>Use HTTP Authorization (Login &amp; Password)</span>
+          </label>
+          <div id="quickAuthFields" class="flex-row hidden">
+            <div style="flex:1;">
+              <label for="quickAuthUser">Login</label>
+              <input type="text" id="quickAuthUser" placeholder="Username">
+            </div>
+            <div style="flex:1;">
+              <label for="quickAuthPass">Password</label>
+              <input type="password" id="quickAuthPass" placeholder="Password">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1B: Full "Download File Info" Modal -->
+  <div id="newDownloadModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 590px;">
+      <div class="modal-header">
+        <div class="modal-title">Download File Info — WarpDM</div>
+        <button id="btnCloseDownloadModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="inputUrl">Download URL <span id="probedMetaBadge" class="text-accent" style="margin-left:8px;font-weight:700;"></span></label>
+          <div class="flex-row">
+            <input type="text" id="inputUrl" placeholder="https://fsn1-speed.hetzner.com/10GB.bin or YouTube / X URL">
+            <button id="btnProbeUrl" class="btn btn-secondary" type="button">Probe Info</button>
+          </div>
+        </div>
+
+        <div id="videoOptionsGroup" class="form-group hidden">
+          <label for="inputVideoQuality">Video / Audio Format (<span id="detectedVideoTitle" class="text-accent">Streaming Media</span>)</label>
+          <select id="inputVideoQuality"></select>
+        </div>
+
+        <div class="flex-row">
+          <div class="form-group" style="flex: 1.4;">
+            <label for="inputFilename">Save File As</label>
+            <input type="text" id="inputFilename" placeholder="Auto-detected from server">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="inputConns">Max Connections</label>
+            <select id="inputConns">
+              <option value="1">1 Connection</option>
+              <option value="4">4 Connections</option>
+              <option value="8" selected>8 Connections</option>
+              <option value="16">16 Connections</option>
+              <option value="32">32 Connections</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputDestFolder">Save To Folder</label>
+          <div class="flex-row">
+            <input type="text" id="inputDestFolder" placeholder="Default Downloads Folder">
+            <button id="btnBrowseModalFolder" class="btn btn-secondary" type="button">Browse...</button>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('newDownloadModal')">Cancel</button>
+          <div style="display:flex;gap:8px;">
+            <button id="btnDownloadLater" class="btn btn-secondary" type="button">Download Later</button>
+            <button id="btnConfirmDownload" class="btn btn-primary" type="button">Start Download</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1C: Batch Multiple URLs Modal -->
+  <div id="batchUrlsModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title">Add Batch Downloads (One URL per line)</div>
+        <button class="btn-close" onclick="closeModal('batchUrlsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="batchUrlsTextarea">Paste multiple direct file or video URLs below:</label>
+          <textarea id="batchUrlsTextarea" rows="7" placeholder="https://example.com/archive1.zip&#10;https://example.com/archive2.zip"></textarea>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary" onclick="closeModal('batchUrlsModal')">Cancel</button>
+          <button class="btn btn-primary" id="btnStartBatchUrls">Start Batch Downloads</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: IDM-Style Custom Speed Limiter Settings (Exact KB/sec or MB/sec!) -->
+  <div id="speedLimiterModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">⚡ Speed Limiter Settings</div>
+        <button class="btn-close" onclick="closeModal('speedLimiterModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Maximum download speed</label>
+          <div class="flex-row" style="align-items:center;">
+            <input type="number" id="modalSpeedValue" min="1" max="1000000" value="512" style="width:140px;">
+            <select id="modalSpeedUnit" style="width:130px;">
+              <option value="kbps" selected>KB/sec</option>
+              <option value="mbps">MB/sec</option>
+            </select>
+            <button type="button" class="btn btn-secondary" id="btnTurnOffSpeedModal">Unlimited</button>
+          </div>
+        </div>
+
+        <label class="checkbox-inline" style="margin-bottom:16px;">
+          <input type="checkbox" id="chkModalSpeedStartup">
+          <span>Enable Speed Limiter on startup</span>
+        </label>
+
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-secondary" onclick="closeModal('speedLimiterModal')">Cancel</button>
+          <button class="btn btn-primary" id="btnSaveSpeedModal">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Multi-Tab IDM-Style WarpDM Configuration / Options (6 Tabs!) -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 630px;">
+      <div class="modal-header">
+        <div class="modal-title">Options</div>
+        <button id="btnCloseSettingsModal" class="btn-close">&times;</button>
+      </div>
+      <div class="cfg-tabs">
+        <button class="cfg-tab active" data-cfgtab="cfgGeneral">General</button>
+        <button class="cfg-tab" data-cfgtab="cfgFileTypes">File types</button>
+        <button class="cfg-tab" data-cfgtab="cfgSaveTo">Save to</button>
+        <button class="cfg-tab" data-cfgtab="cfgDownloads">Downloads</button>
+        <button class="cfg-tab" data-cfgtab="cfgConnection">Connection</button>
+        <button class="cfg-tab" data-cfgtab="cfgSounds">Sounds</button>
+      </div>
+      <div class="modal-body cfg-body">
+        <!-- Tab 1: General -->
+        <div id="cfgGeneral" class="cfg-pane active">
+          <div class="cfg-section-title">System &amp; Browser</div>
+          <label class="checkbox-inline" style="margin-bottom:8px;">
+            <input type="checkbox" id="settingLaunchStartup">
+            <span>Launch WarpDM on Windows startup</span>
+          </label>
+          <label class="checkbox-inline" style="margin-bottom:8px;">
+            <input type="checkbox" id="settingClipboardMonitor">
+            <span>Monitor clipboard for download links</span>
+          </label>
+          <label class="checkbox-inline" style="margin-bottom:14px;">
+            <input type="checkbox" id="settingAutoCapture" checked>
+            <span>Automatically capture browser downloads</span>
+          </label>
+
+          <div class="form-group">
+            <label>Browser Extension</label>
+            <div class="flex-row">
+              <input type="text" id="extensionDirDisplay" readonly style="color:#94a3b8;">
+              <button type="button" class="btn btn-primary" onclick="closeModal('settingsModal');openBrowserWizardModal()">🧩 Easy Setup</button>
+              <button id="btnOpenExtFolder" class="btn btn-secondary" type="button">Open Folder</button>
+            </div>
+          </div>
+
+          <div id="mediaToolsBadgeArea" class="tools-status-box"></div>
+        </div>
+
+        <!-- Tab 2: File Types -->
+        <div id="cfgFileTypes" class="cfg-pane">
+          <div class="cfg-section-title">File Types</div>
+          <div class="form-group">
+            <label for="settingFileTypes">Captured file extensions:</label>
+            <textarea id="settingFileTypes" rows="4"></textarea>
+            <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+              <button type="button" class="btn btn-secondary btn-icon-sm" id="btnResetFileTypes">Reset Defaults</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="settingExcludedDomains">Excluded domains:</label>
+            <textarea id="settingExcludedDomains" rows="2"></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 3: Save To -->
+        <div id="cfgSaveTo" class="cfg-pane">
+          <div class="cfg-section-title">Folders</div>
+          <div class="form-group">
+            <label for="settingDownloadDir">Default download folder</label>
+            <div class="flex-row">
+              <input type="text" id="settingDownloadDir">
+              <button id="btnBrowseSettingDir" class="btn btn-secondary" type="button">Browse...</button>
+            </div>
+          </div>
+          <label class="checkbox-inline" style="margin-bottom:12px;">
+            <input type="checkbox" id="settingCategorySubfolders">
+            <span>Sort files into category subfolders</span>
+          </label>
+
+          <div class="form-group">
+            <label for="cfgCatSelector">Custom folder by category</label>
+            <div class="flex-row" style="margin-bottom:8px;">
+              <select id="cfgCatSelector" style="width:165px;">
+                <option value="Video">Video</option>
+                <option value="Music">Music</option>
+                <option value="Programs">Programs</option>
+                <option value="Compressed">Compressed</option>
+                <option value="Documents">Documents</option>
+              </select>
+              <input type="text" id="cfgCatFolderInput" placeholder="Default folder">
+              <button type="button" class="btn btn-secondary" id="btnBrowseCatFolder">Browse...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="settingTempDir">Temporary folder</label>
+            <div class="flex-row">
+              <input type="text" id="settingTempDir" placeholder="Default">
+              <button type="button" class="btn btn-secondary" id="btnBrowseTempDir">Browse...</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Downloads -->
+        <div id="cfgDownloads" class="cfg-pane">
+          <div class="cfg-section-title">Dialogs &amp; Files</div>
+          <label class="checkbox-inline" style="margin-bottom:8px;">
+            <input type="checkbox" id="settingAskConfirmation" checked>
+            <span>Show Download File Info dialog</span>
+          </label>
+          <label class="checkbox-inline" style="margin-bottom:8px;">
+            <input type="checkbox" id="settingShowProgressPopup" checked>
+            <span>Show live progress window</span>
+          </label>
+          <label class="checkbox-inline" style="margin-bottom:14px;">
+            <input type="checkbox" id="settingQuietMode" checked>
+            <span>Quiet mode</span>
+          </label>
+
+          <div class="form-group">
+            <label for="settingDuplicateAction">If file already exists:</label>
+            <select id="settingDuplicateAction">
+              <option value="rename">Auto-rename — file (1).ext</option>
+              <option value="overwrite">Overwrite existing file</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="settingCustomUa">Custom User-Agent</label>
+            <input type="text" id="settingCustomUa" placeholder="Default">
+          </div>
+        </div>
+
+        <!-- Tab 5: Connection / Proxy -->
+        <div id="cfgConnection" class="cfg-pane">
+          <div class="cfg-section-title">Connections &amp; Proxy</div>
+          <div class="flex-row">
+            <div class="form-group" style="flex:1;">
+              <label for="settingMaxConns">Default connections per file</label>
+              <select id="settingMaxConns">
+                <option value="1">1 Connection</option>
+                <option value="4">4 Connections</option>
+                <option value="8" selected>8 Connections</option>
+                <option value="16">16 Connections</option>
+                <option value="32">32 Connections</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label for="settingMaxConcurrent">Max simultaneous downloads</label>
+              <select id="settingMaxConcurrent">
+                <option value="1">1 at a time</option>
+                <option value="2">2 at a time</option>
+                <option value="4" selected>4 at a time</option>
+                <option value="8">8 at a time</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cfg-section-title" style="margin-top:8px;">HTTP / HTTPS Proxy (Optional)</div>
+          <div class="flex-row">
+            <div class="form-group" style="flex:2;">
+              <label for="settingProxyHost">Proxy Host / IP</label>
+              <input type="text" id="settingProxyHost" placeholder="e.g. 127.0.0.1">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label for="settingProxyPort">Port</label>
+              <input type="text" id="settingProxyPort" placeholder="e.g. 8080">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 6: Sounds -->
+        <div id="cfgSounds" class="cfg-pane">
+          <div class="cfg-section-title">Audio Event Notifications</div>
+          <div class="sound-events-box">
+            <div class="sound-row">
+              <label class="checkbox-inline"><input type="checkbox" id="settingSoundComplete"><span>Download complete chime</span></label>
+              <button type="button" class="btn btn-secondary btn-icon-sm" onclick="playEventChime('complete')">▶ Test</button>
+            </div>
+            <div class="sound-row">
+              <label class="checkbox-inline"><input type="checkbox" id="settingSoundFailed"><span>Download failed alert</span></label>
+              <button type="button" class="btn btn-secondary btn-icon-sm" onclick="playEventChime('failed')">▶ Test</button>
+            </div>
+            <div class="sound-row">
+              <label class="checkbox-inline"><input type="checkbox" id="settingSoundQueue"><span>Queue processing completed</span></label>
+              <button type="button" class="btn btn-secondary btn-icon-sm" onclick="playEventChime('queue')">▶ Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('settingsModal')">Cancel</button>
+          <button id="btnSaveSettings" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Scheduler & Queues Manager -->
+  <div id="schedulerModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 510px;">
+      <div class="modal-header">
+        <div class="modal-title">⏱ Queue Manager &amp; Scheduler</div>
+        <button class="btn-close" onclick="closeModal('schedulerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="schedEnableStart">
+            <span>Automatically start queued downloads daily at:</span>
+          </label>
+          <input type="time" id="schedStartTime" value="02:00" style="margin-top:6px;width:150px;">
+        </div>
+        <div class="form-group">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="schedEnableStop">
+            <span>Automatically pause / stop all downloads at:</span>
+          </label>
+          <input type="time" id="schedStopTime" value="07:00" style="margin-top:6px;width:150px;">
+        </div>
+        <div class="form-group">
+          <label for="schedMaxConc">Number of files to download simultaneously in queue:</label>
+          <select id="schedMaxConc" style="width:180px;">
+            <option value="1">1 file at a time</option>
+            <option value="2" selected>2 files at a time</option>
+            <option value="4">4 files at a time</option>
+            <option value="8">8 files at a time</option>
+          </select>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:space-between;margin-top:16px;">
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn-primary" onclick="sendWs({action:'start_queue'});closeModal('schedulerModal')">▶ Start Now</button>
+            <button type="button" class="btn btn-secondary" onclick="sendWs({action:'stop_all'})">⏹ Stop All</button>
+          </div>
+          <button type="button" class="btn btn-primary" id="btnSaveScheduler">Apply Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Live Transfer Details HUD Modal -->
+  <div id="hudModal" class="modal-overlay hidden">
+    <div class="modal-card hud-modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="text-accent">Transfer Details:</span>
+          <span id="hudFilename">filename.zip</span>
+        </div>
+        <button id="btnCloseHud" class="btn-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="hudErrorBox" class="error-alert hidden"></div>
+
+        <div class="hud-url-bar">
+          <span id="hudUrlText" class="hud-url-text">https://...</span>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button id="btnPopOutHud" class="btn btn-secondary btn-icon-sm">↗ Mini Window</button>
+            <button id="btnCopyHudUrl" class="btn btn-secondary btn-icon-sm">Copy URL</button>
+          </div>
+        </div>
+
+        <div class="hud-overall-progress">
+          <div class="hud-progress-top">
+            <span id="hudStatusLabel" class="hud-status-label">Receiving data...</span>
+            <span id="hudPercentValue" class="hud-percent-value">0.0%</span>
+          </div>
+          <div class="hud-progress-track">
+            <div id="hudProgressFill" class="hud-progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="hud-stats-grid">
+          <div class="hud-stat-box">
+            <span class="stat-label">Downloaded</span>
+            <span id="hudDownloaded" class="stat-value">0 B / Unknown</span>
+          </div>
+          <div class="hud-stat-box">
+            <span class="stat-label">Speed</span>
+            <span id="hudSpeed" class="stat-value text-accent">0 MB/s</span>
+          </div>
+          <div class="hud-stat-box">
+            <span id="hudConnsLabel" class="stat-label">Connections</span>
+            <span id="hudConns" class="stat-value">0</span>
+          </div>
+          <div class="hud-stat-box">
+            <span class="stat-label">Time Left</span>
+            <span id="hudEta" class="stat-value">--</span>
+          </div>
+        </div>
+
+        <div id="hudSectionTitle" class="hud-section-title">Segments</div>
+        <div id="chunkMapContainer" class="chunk-map-container"></div>
+
+        <div class="hud-bottom-bar">
+          <div class="chunk-legend">
+            <span class="legend-item"><span class="legend-color color-completed"></span> Done</span>
+            <span class="legend-item"><span class="legend-color color-downloading"></span> Active</span>
+            <span class="legend-item"><span class="legend-color color-pending"></span> Queued</span>
+          </div>
+          <div id="hudFooterActions" class="row-actions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: Remote ZIP Inspector & Site Grabber & Columns & About -->
+  <div id="zipPreviewModal" class="modal-overlay hidden">
+    <div class="modal-card zip-modal-card">
+      <div class="modal-header">
+        <div class="modal-title">ZIP Inspector</div>
+        <button id="btnCloseZipModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="zipUrlInput">ZIP URL</label>
+          <div class="flex-row">
+            <input type="text" id="zipUrlInput" placeholder="https://example.com/archive.zip">
+            <button id="btnInspectZip" class="btn btn-primary">Inspect</button>
+          </div>
+        </div>
+        <div id="zipResultArea" class="zip-result-area">
+          <div class="placeholder-text">Enter a .zip URL to preview its contents.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="grabberModal" class="modal-overlay hidden">
+    <div class="modal-card zip-modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Site Grabber</div>
+        <button id="btnCloseGrabberModal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="grabberUrlInput">Webpage URL</label>
+          <div class="flex-row">
+            <input type="text" id="grabberUrlInput" placeholder="https://...">
+            <button id="btnRunGrabber" class="btn btn-primary">Scan</button>
+          </div>
+        </div>
+        <div id="grabberResultArea" class="zip-result-area">
+          <div class="placeholder-text">Enter a webpage URL to list downloadable files.</div>
+        </div>
+        <div id="grabberFooter" class="modal-footer hidden" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+          <span id="grabberCountLabel" style="font-size:12px;color:#94a3b8;">0 selected</span>
+          <button id="btnDownloadGrabbed" class="btn btn-primary">Download Selected</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="columnsModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 360px;">
+      <div class="modal-header">
+        <div class="modal-title">Customize Columns</div>
+        <button class="btn-close" onclick="closeModal('columnsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="q" checked><span>Queue (Q)</span></label>
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="size" checked><span>Size</span></label>
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="status" checked><span>Status</span></label>
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="eta" checked><span>Time Left</span></label>
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="speed" checked><span>Transfer Rate</span></label>
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="date" checked><span>Last Try Date</span></label>
+          <label class="checkbox-inline"><input type="checkbox" class="col-vis-chk" value="desc" checked><span>Source</span></label>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:space-between;gap:8px;">
+          <button type="button" class="btn btn-secondary" onclick="resetAllColumnWidths()">Reset Widths</button>
+          <button class="btn btn-primary" onclick="applyColumnVisibility();closeModal('columnsModal')">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple Manual Copy-Paste Browser Extension Setup Modal (Zero Auto-Popups!) -->
+  <div id="browserWizardModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title">🧩 Connect Browser Extension</div>
+        <button class="btn-close" onclick="closeModal('browserWizardModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Step 1 — Select your browser, click <strong>Copy Address</strong>, and paste (<kbd>Ctrl+V</kbd>) in a new browser tab:</label>
+          <div class="flex-row">
+            <select id="wizBrowserUrlSelect" style="width:185px;">
+              <option value="chrome://extensions">Google Chrome</option>
+              <option value="brave://extensions">Brave</option>
+              <option value="edge://extensions">Microsoft Edge</option>
+              <option value="opera://extensions">Opera / GX</option>
+              <option value="vivaldi://extensions">Vivaldi</option>
+              <option value="about:debugging#/runtime/this-firefox">Mozilla Firefox</option>
+            </select>
+            <input type="text" id="wizExtUrlInput" value="chrome://extensions" readonly style="color:#35d5e8;font-family:Consolas,monospace;">
+            <button type="button" class="btn btn-primary" id="btnWizCopyUrl">📋 Copy Address</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Step 2 — Turn ON <strong>Developer mode</strong> (top-right), then click <strong>Load unpacked</strong> (top-left).</label>
+        </div>
+
+        <div class="form-group" style="margin-bottom:6px;">
+          <label>Step 3 — Click <strong>Copy Path</strong> below, then paste (<kbd>Ctrl+V</kbd>) inside the folder window &amp; select folder:</label>
+          <div class="flex-row">
+            <input type="text" id="wizExtFolderInput" readonly style="color:#f3f5f7;font-family:Consolas,monospace;">
+            <button type="button" class="btn btn-primary" id="btnWizCopyPath">📋 Copy Path</button>
+            <button type="button" class="btn btn-secondary" id="btnWizHighlightFolder" title="Highlights folder in Explorer to drag &amp; drop">📂 Show Folder</button>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button class="btn btn-secondary" onclick="closeModal('browserWizardModal')">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aboutModal" class="modal-overlay hidden">
+    <div class="modal-card" style="width: 390px; text-align:center;">
+      <div class="modal-header">
+        <div class="modal-title">About WarpDM</div>
+        <button class="btn-close" onclick="closeModal('aboutModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <img src="/assets/logo256.png?v=3.5" alt="WarpDM" style="width:84px;height:84px;margin-bottom:10px;">
+        <h3 style="margin-bottom:3px;color:#f3f5f7;letter-spacing:0.5px;">WarpDM v3.5.0</h3>
+        <p style="font-size:12px;color:#35d5e8;font-weight:600;margin-bottom:8px;">Warp Download Manager</p>
+        <p style="font-size:12px;color:#94a3b8;margin-bottom:16px;">Free &amp; Open Source • MIT License</p>
+        <button class="btn btn-primary" onclick="closeModal('aboutModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js?v=3.5"></script>
+</body>
+</html>

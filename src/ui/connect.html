@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect Browser — WarpDM</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3.5">
+  <style>
+    :root {
+      --bg-primary: #111820;
+      --bg-card: #161f2a;
+      --bg-elev: #1f2b3a;
+      --border: #263547;
+      --text: #f3f5f7;
+      --muted: #94a3b8;
+      --cyan: #35d5e8;
+      --cyan-deep: #189ab4;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text);
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 32px 18px;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 780px;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand img { width: 42px; height: 42px; object-fit: contain; }
+    .brand h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
+    .brand span { font-size: 12px; color: var(--cyan); font-weight: 600; }
+
+    .status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      background: rgba(53, 213, 232, 0.08);
+      border: 1.5px solid rgba(53, 213, 232, 0.35);
+    }
+    .status-banner.connected {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.55);
+    }
+    .status-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+    .status-sub { font-size: 13px; color: var(--muted); }
+    .status-banner.connected .status-title { color: #34d399; }
+
+    .browser-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .b-tab {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+    .b-tab:hover { color: var(--text); border-color: var(--cyan); }
+    .b-tab.active {
+      background: rgba(53, 213, 232, 0.15);
+      color: var(--cyan);
+      border-color: var(--cyan);
+    }
+
+    .steps-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(53, 213, 232, 0.16);
+      border: 1.5px solid var(--cyan);
+      color: var(--cyan);
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-body { flex: 1; min-width: 0; }
+    .step-title { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+    .step-desc { font-size: 13px; color: var(--muted); margin-bottom: 11px; line-height: 1.45; }
+
+    .copy-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .code-box {
+      flex: 1;
+      min-width: 220px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 12px;
+      font-family: Consolas, monospace;
+      font-size: 12.5px;
+      color: var(--cyan);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: all;
+    }
+    .btn {
+      background: linear-gradient(135deg, #22b8d6, #117a98);
+      color: #fff;
+      border: 1px solid rgba(53, 213, 232, 0.4);
+      padding: 9px 16px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.14s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-secondary {
+      background: var(--bg-elev);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn.copied {
+      background: var(--success) !important;
+      border-color: var(--success) !important;
+    }
+
+    /* Visual Browser Mockup Diagram for Step 2 */
+    .diagram-box {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .diag-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--border);
+    }
+    .diag-title { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+    .diag-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(53, 213, 232, 0.12);
+      border: 1px solid var(--cyan);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .switch-pill {
+      width: 28px;
+      height: 15px;
+      background: var(--cyan);
+      border-radius: 10px;
+      position: relative;
+    }
+    .switch-pill::after {
+      content: "";
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #111820;
+      top: 2px;
+      right: 2px;
+    }
+    .diag-btn-mock {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      background: var(--bg-elev);
+      border: 1.5px solid var(--cyan);
+      color: var(--cyan);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    kbd {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top-bar">
+      <div class="brand">
+        <img src="/assets/logo128.png?v=3.5" alt="WarpDM">
+        <div>
+          <h1>WarpDM Browser Setup</h1>
+          <span>v3.5.0 • Easy Manual Connection</span>
+        </div>
+      </div>
+      <a href="/" class="btn btn-secondary" style="text-decoration:none;">Open WarpDM</a>
+    </div>
+
+    <div id="liveBanner" class="status-banner">
+      <div>
+        <div id="liveTitle" class="status-title">Waiting for browser extension...</div>
+        <div id="liveSub" class="status-sub">Follow the 3 quick steps below — this banner turns green automatically as soon as it connects!</div>
+      </div>
+      <span id="liveBadge" style="font-size:24px;">🧩</span>
+    </div>
+
+    <div class="browser-tabs" id="browserTabs">
+      <button class="b-tab" data-b="chrome">Google Chrome</button>
+      <button class="b-tab" data-b="brave">Brave</button>
+      <button class="b-tab" data-b="edge">Microsoft Edge</button>
+      <button class="b-tab" data-b="opera">Opera / GX</button>
+      <button class="b-tab" data-b="vivaldi">Vivaldi</button>
+      <button class="b-tab" data-b="firefox">Mozilla Firefox</button>
+    </div>
+
+    <div class="steps-grid">
+      <!-- STEP 1 -->
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Open Your Browser's Extensions Page</div>
+          <div class="step-desc">Click <strong>Copy Address</strong>, open a new tab (<kbd>Ctrl</kbd>+<kbd>T</kbd>), paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>) in the top address bar, and press <kbd>Enter</kbd>.</div>
+          <div class="copy-row">
+            <div id="extUrlBox" class="code-box">chrome://extensions</div>
+            <button id="btnCopyUrl" class="btn" type="button">📋 Copy Address</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div id="step2Title" class="step-title">Turn On "Developer mode" &amp; Click "Load unpacked"</div>
+          <div id="step2Desc" class="step-desc">Switch on <strong>Developer mode</strong> (top-right corner), then click <strong>Load unpacked</strong> (top-left corner):</div>
+          <div id="chromiumDiagram" class="diagram-box">
+            <div class="diag-topbar">
+              <span class="diag-title">🧩 Extensions</span>
+              <span class="diag-toggle">1. Turn ON Developer mode <span class="switch-pill"></span></span>
+            </div>
+            <div>
+              <span class="diag-btn-mock">2. Click "Load unpacked"</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Paste the WarpDM Extension Path (or Drag &amp; Drop)</div>
+          <div id="step3Desc" class="step-desc">Click <strong>Copy Folder Path</strong> below, then in the folder window press <kbd>Ctrl</kbd>+<kbd>V</kbd>, press <kbd>Enter</kbd>, and click <strong>Select Folder</strong>.</div>
+          <div class="copy-row">
+            <div id="extPathBox" class="code-box">Loading folder path...</div>
+            <button id="btnCopyPath" class="btn" type="button">📋 Copy Folder Path</button>
+            <button id="btnOpenExplorer" class="btn btn-secondary" type="button" title="Highlights the extension folder in File Explorer so you can also drag & drop it!">📂 Show Folder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BROWSER_URLS = {
+      chrome: "chrome://extensions",
+      brave: "brave://extensions",
+      edge: "edge://extensions",
+      opera: "opera://extensions",
+      vivaldi: "vivaldi://extensions",
+      firefox: "about:debugging#/runtime/this-firefox",
+    };
+
+    let chromiumPath = "";
+    let firefoxPath = "";
+    let currentBrowser = "chrome";
+
+    async function detectBrowser() {
+      const q = new URLSearchParams(location.search).get("browser");
+      if (q && BROWSER_URLS[q]) return q;
+      const ua = navigator.userAgent || "";
+      if (/Firefox\//i.test(ua)) return "firefox";
+      if (/OPR\/|Opera/i.test(ua)) return "opera";
+      if (/Vivaldi/i.test(ua)) return "vivaldi";
+      if (/Edg\//i.test(ua)) return "edge";
+      try {
+        if (navigator.brave && await navigator.brave.isBrave()) return "brave";
+      } catch (_) {}
+      return "chrome";
+    }
+
+    function setBrowserTab(b) {
+      currentBrowser = BROWSER_URLS[b] ? b : "chrome";
+      document.querySelectorAll(".b-tab").forEach((el) => {
+        el.classList.toggle("active", el.dataset.b === currentBrowser);
+      });
+      document.getElementById("extUrlBox").textContent = BROWSER_URLS[currentBrowser];
+
+      const isFf = currentBrowser === "firefox";
+      document.getElementById("step2Title").textContent = isFf
+        ? 'Click "Load Temporary Add-on..."'
+        : 'Turn On "Developer mode" & Click "Load unpacked"';
+      document.getElementById("step2Desc").innerHTML = isFf
+        ? 'On the Firefox debugging page, click the <strong>Load Temporary Add-on...</strong> button.'
+        : 'Switch on <strong>Developer mode</strong> (top-right corner), then click <strong>Load unpacked</strong> (top-left corner):';
+      document.getElementById("chromiumDiagram").style.display = isFf ? "none" : "flex";
+      document.getElementById("extPathBox").textContent = isFf ? (firefoxPath || chromiumPath) : chromiumPath;
+      document.getElementById("btnCopyPath").textContent = isFf ? "📋 Copy Add-on Path" : "📋 Copy Folder Path";
+      document.getElementById("step3Desc").innerHTML = isFf
+        ? 'Click <strong>Copy Add-on Path</strong>, then paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>) in the file picker and press <kbd>Enter</kbd>.'
+        : 'Click <strong>Copy Folder Path</strong> below, then in the folder picker press <kbd>Ctrl</kbd>+<kbd>V</kbd>, press <kbd>Enter</kbd>, and click <strong>Select Folder</strong>.';
+    }
+
+    document.querySelectorAll(".b-tab").forEach((btn) => {
+      btn.onclick = () => setBrowserTab(btn.dataset.b);
+    });
+
+    function flashCopied(btn, originalText) {
+      btn.classList.add("copied");
+      btn.textContent = "✔ Copied!";
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        btn.textContent = originalText;
+      }, 1800);
+    }
+
+    document.getElementById("btnCopyUrl").onclick = (e) => {
+      navigator.clipboard?.writeText(document.getElementById("extUrlBox").textContent.trim());
+      flashCopied(e.currentTarget, "📋 Copy Address");
+    };
+
+    document.getElementById("btnCopyPath").onclick = (e) => {
+      const orig = currentBrowser === "firefox" ? "📋 Copy Add-on Path" : "📋 Copy Folder Path";
+      navigator.clipboard?.writeText(document.getElementById("extPathBox").textContent.trim());
+      flashCopied(e.currentTarget, orig);
+    };
+
+    document.getElementById("btnOpenExplorer").onclick = () => {
+      fetch("/api/open-extension-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ highlightParent: true }),
+      });
+    };
+
+    function markExtensionConnected(ver) {
+      const banner = document.getElementById("liveBanner");
+      banner.classList.add("connected");
+      document.getElementById("liveTitle").textContent = `✔ Connected! WarpDM Extension v${ver || "3.4.0"} is Active in This Browser`;
+      document.getElementById("liveSub").textContent = "You're ready! Open YouTube, X, Kick, Facebook, or click any file download link to use WarpDM.";
+      document.getElementById("liveBadge").textContent = "✅";
+    }
+
+    window.addEventListener("warpdm-extension-ready", (e) => markExtensionConnected(e.detail?.version));
+
+    setInterval(() => {
+      const extVer = document.documentElement.getAttribute("data-warpdm-ext");
+      if (extVer) markExtensionConnected(extVer);
+    }, 450);
+
+    (async () => {
+      try {
+        const res = await fetch("/api/browsers");
+        const json = await res.json();
+        chromiumPath = json.extensionDir || "";
+        firefoxPath = json.firefoxXpiPath || json.firefoxManifestPath || chromiumPath;
+      } catch (_) {}
+      const b = await detectBrowser();
+      setBrowserTab(b);
+      const extVer = document.documentElement.getAttribute("data-warpdm-ext");
+      if (extVer) markExtensionConnected(extVer);
+    })();
+  </script>
+</body>
+</html>

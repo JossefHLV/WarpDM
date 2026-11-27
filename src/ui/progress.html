@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>0% — Starting Download — WarpDM</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3.5">
+  <style>
+    :root {
+      --bg-primary: #111820;
+      --bg-secondary: #161f2a;
+      --bg-tertiary: #1f2b3a;
+      --border: #263547;
+      --text: #f3f5f7;
+      --muted: #94a3b8;
+      --accent: #189ab4;
+      --accent-light: #35d5e8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text);
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      padding: 10px 15px 13px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .tab-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .tabs-left { display: flex; gap: 3px; }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--muted);
+      padding: 6px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+    }
+    .tab-btn:hover { color: var(--text); background: rgba(30, 41, 59, 0.5); }
+    .tab-btn.active {
+      background: var(--bg-secondary);
+      color: var(--accent-light);
+      border-color: var(--border);
+      position: relative;
+      top: 1px;
+    }
+    .brand-mini {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      padding-bottom: 4px;
+    }
+    .brand-mini img { width: 16px; height: 16px; border-radius: 3px; }
+
+    .tab-pane { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    .tab-pane.active { display: flex; }
+
+    .info-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 13px;
+      margin-bottom: 10px;
+    }
+    .url-line {
+      font-size: 11.5px;
+      color: var(--accent-light);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 7px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.55);
+      user-select: text;
+    }
+    .kv-grid {
+      display: grid;
+      grid-template-columns: 128px 1fr;
+      row-gap: 4px;
+      font-size: 12px;
+      align-items: center;
+    }
+    .kv-label { color: var(--muted); font-weight: 500; }
+    .kv-val {
+      color: var(--text);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+    }
+    .kv-val.status-receiving { color: #38bdf8; }
+    .kv-val.status-completed { color: #34d399; }
+    .kv-val.status-paused { color: #fbbf24; }
+    .kv-val.status-failed { color: #f87171; }
+    .resume-yes { color: #34d399; }
+
+    .progress-section { margin-bottom: 10px; }
+    .progress-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .fname-short {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 440px;
+    }
+    .pct-big {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--accent-light);
+      font-variant-numeric: tabular-nums;
+    }
+    .pct-big.done { color: var(--success); }
+
+    .bar-outer {
+      width: 100%;
+      height: 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #117a98, #35d5e8, #6aecfc);
+      border-radius: 6px;
+      transition: width 0.14s linear;
+    }
+    .bar-fill.completed { background: linear-gradient(90deg, #059669, #34d399); }
+    .bar-fill.paused { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .bar-fill.failed { background: linear-gradient(90deg, #dc2626, #f87171); }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .btn-group { display: flex; gap: 8px; }
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.14s;
+      white-space: nowrap;
+    }
+    .btn-primary { background: linear-gradient(135deg, #22b8d6, #117a98); color: #fff; border-color: rgba(53,213,232,0.4); }
+    .btn-primary:hover { filter: brightness(1.12); }
+    .btn-success { background: linear-gradient(135deg, #059669, #047857); color: #fff; }
+    .btn-success:hover { filter: brightness(1.12); }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: #334155; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.28); }
+
+    .details-area {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+      padding-top: 8px;
+    }
+    .details-title {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .seg-strip {
+      height: 15px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      gap: 2px;
+      padding: 2px;
+      margin-bottom: 7px;
+      flex-shrink: 0;
+    }
+    .seg-cell {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .seg-cell-fill {
+      height: 100%;
+      background: var(--accent-light);
+      width: 0%;
+      transition: width 0.15s linear;
+    }
+    .seg-cell.completed .seg-cell-fill { background: var(--success); width: 100% !important; }
+
+    .conn-table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .conn-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    .conn-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-tertiary);
+      color: var(--muted);
+      text-align: left;
+      padding: 5px 10px;
+      font-weight: 600;
+    }
+    .conn-table td {
+      padding: 4px 10px;
+      border-top: 1px solid rgba(51, 65, 85, 0.35);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .custom-speed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-primary);
+      padding: 10px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+    }
+    .custom-speed-row input[type="number"], .custom-speed-row select {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 9px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      outline: none;
+    }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+    .chk-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .note-box {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+      background: rgba(15, 23, 42, 0.7);
+      border-left: 3px solid var(--accent-light);
+      padding: 7px 10px;
+      border-radius: 4px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="tab-strip">
+    <div class="tabs-left">
+      <button class="tab-btn active" data-tab="statusPane">Download status</button>
+      <button class="tab-btn" data-tab="limiterPane">Speed Limiter</button>
+      <button class="tab-btn" data-tab="completionPane">Options on completion</button>
+    </div>
+    <div class="brand-mini">
+      <img src="/assets/logo32.png?v=3.5" alt="W">
+      <span>WarpDM v3.5.0</span>
+    </div>
+  </div>
+
+  <!-- TAB 1: Download Status -->
+  <div id="statusPane" class="tab-pane active">
+    <div class="info-panel">
+      <div id="urlLine" class="url-line">https://...</div>
+      <div class="kv-grid">
+        <span class="kv-label">Status</span>
+        <span id="valStatus" class="kv-val status-receiving">Connecting...</span>
+
+        <span class="kv-label">File size</span>
+        <span id="valSize" class="kv-val">Calculating...</span>
+
+        <span class="kv-label">Downloaded</span>
+        <span id="valDownloaded" class="kv-val">0 B ( 0.0% )</span>
+
+        <span class="kv-label">Transfer rate</span>
+        <span id="valSpeed" class="kv-val">--</span>
+
+        <span class="kv-label">Time left</span>
+        <span id="valEta" class="kv-val">--</span>
+
+        <span class="kv-label">Resume capability</span>
+        <span id="valResume" class="kv-val resume-yes">Yes</span>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-header">
+        <span id="valFilename" class="fname-short">Preparing transfer...</span>
+        <span id="valPctBig" class="pct-big">0.0%</span>
+      </div>
+      <div class="bar-outer">
+        <div id="barFill" class="bar-fill"></div>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <button id="btnToggleDetails" type="button" class="btn btn-secondary">&lt;&lt; Hide details</button>
+
+      <div id="activeControls" class="btn-group">
+        <button id="btnPauseResume" type="button" class="btn btn-secondary">⏸ Pause</button>
+        <button id="btnCancel" type="button" class="btn btn-danger">✕ Cancel</button>
+      </div>
+
+      <div id="completedControls" class="btn-group hidden">
+        <button id="btnOpenFolder" type="button" class="btn btn-success">📂 Show in Folder</button>
+        <button id="btnCloseDone" type="button" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+
+    <div id="detailsArea" class="details-area">
+      <div class="details-title">Connections</div>
+      <div id="segStrip" class="seg-strip"></div>
+      <div class="conn-table-wrap">
+        <table class="conn-table">
+          <thead>
+            <tr>
+              <th width="46">N.</th>
+              <th width="135">Downloaded</th>
+              <th>Info</th>
+            </tr>
+          </thead>
+          <tbody id="connTableBody">
+            <tr><td>1</td><td>0 B</td><td>Connecting to remote host...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Speed Limiter (IDM Custom Exact Speed + Presets!) -->
+  <div id="limiterPane" class="tab-pane">
+    <div class="card-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size: 13px; font-weight: 700;">Speed Limiter Settings</span>
+        <span style="font-size: 11.5px; color: var(--muted);">Active: <strong id="lblCurrentCap" style="color: var(--accent-light);">Unlimited</strong></span>
+      </div>
+
+      <div class="custom-speed-row">
+        <span style="font-size:12px;color:var(--muted);flex:1;">Maximum download speed:</span>
+        <input type="number" id="customSpeedVal" min="1" max="1000000" value="1024" style="width:92px;">
+        <select id="customSpeedUnit" style="width:95px;">
+          <option value="kbps" selected>KB/sec</option>
+          <option value="mbps">MB/sec</option>
+        </select>
+        <button type="button" id="btnApplyCustomSpeed" class="btn btn-primary">Apply</button>
+        <button type="button" id="btnDisableSpeedLimit" class="btn btn-secondary">Turn Off</button>
+      </div>
+
+      <div class="preset-grid">
+        <button type="button" class="btn btn-secondary speed-preset" data-bps="0">Unlimited</button>
+        <button type="button" class="btn btn-secondary speed-preset" data-bps="26214400">25 MB/s</button>
+        <button type="button" class="btn btn-secondary speed-preset" data-bps="10485760">10 MB/s</button>
+        <button type="button" class="btn btn-secondary speed-preset" data-bps="5242880">5 MB/s</button>
+        <button type="button" class="btn btn-secondary speed-preset" data-bps="1048576">1 MB/s</button>
+        <button type="button" class="btn btn-secondary speed-preset" data-bps="262144">256 KB/s</button>
+      </div>
+
+      <label class="chk-line">
+        <input type="checkbox" id="chkStartupSpeedLimit">
+        <span>Enable Speed Limiter on startup</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- TAB 3: Options on Completion -->
+  <div id="completionPane" class="tab-pane">
+    <div class="card-box">
+      <div style="font-size: 13px; font-weight: 700;">On Completion</div>
+      <label class="chk-line">
+        <input type="checkbox" id="chkAutoClose">
+        <span>Close progress window automatically</span>
+      </label>
+      <label class="chk-line">
+        <input type="checkbox" id="chkAutoOpenFolder">
+        <span>Open destination folder automatically</span>
+      </label>
+    </div>
+  </div>
+
+  <script>
+    try {
+      window.resizeTo(625, 565);
+    } catch (_) {}
+
+    const params = new URLSearchParams(window.location.search);
+    const downloadId = params.get("id");
+    if (!downloadId) window.close();
+
+    let currentState = "probing";
+    let detailsVisible = true;
+    let completionTriggered = false;
+
+    const chkAutoClose = document.getElementById("chkAutoClose");
+    const chkAutoOpenFolder = document.getElementById("chkAutoOpenFolder");
+    chkAutoClose.checked = localStorage.getItem("warpdm_auto_close_prog") === "1";
+    chkAutoOpenFolder.checked = localStorage.getItem("warpdm_auto_open_folder") === "1";
+    chkAutoClose.onchange = () => localStorage.setItem("warpdm_auto_close_prog", chkAutoClose.checked ? "1" : "0");
+    chkAutoOpenFolder.onchange = () => localStorage.setItem("warpdm_auto_open_folder", chkAutoOpenFolder.checked ? "1" : "0");
+
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    document.getElementById("btnToggleDetails").onclick = () => {
+      detailsVisible = !detailsVisible;
+      document.getElementById("detailsArea").classList.toggle("hidden", !detailsVisible);
+      document.getElementById("btnToggleDetails").textContent = detailsVisible ? "<< Hide details" : "Show details >>";
+      try {
+        window.resizeTo(625, detailsVisible ? 565 : 355);
+      } catch (_) {}
+    };
+
+    function formatBytes(b) {
+      if (!b || b <= 0) return "0 B";
+      const k = 1024;
+      const u = ["B", "KB", "MB", "GB", "TB"];
+      const i = Math.min(u.length - 1, Math.floor(Math.log(b) / Math.log(k)));
+      return (b / Math.pow(k, i)).toFixed(2) + " " + u[i];
+    }
+
+    function formatEtaLong(sec, st) {
+      if (st === "completed") return "0 sec (Done)";
+      if (st === "merging") return "1 sec (FFmpeg processing...)";
+      if (st === "paused") return "Paused";
+      if (!sec || sec <= 0 || st !== "downloading") return "--";
+      if (sec < 60) return `${sec} sec`;
+      if (sec < 3600) return `${Math.floor(sec / 60)} min ${sec % 60} sec`;
+      return `${Math.floor(sec / 3600)} hr ${Math.floor((sec % 3600) / 60)} min`;
+    }
+
+    function computePct(d) {
+      if (d.state === "completed") return 100;
+      if (typeof d.progressPercent === "number" && d.progressPercent > 0) {
+        return Math.min(99.9, d.progressPercent);
+      }
+      if (d.totalBytes && d.totalBytes > 0) {
+        return Math.min(99.9, (d.downloadedBytes / d.totalBytes) * 100);
+      }
+      return 0;
+    }
+
+    function renderProgress(d) {
+      if (!d) return;
+      currentState = d.state || "downloading";
+      const pct = computePct(d);
+      const pctStr = pct.toFixed(1);
+      const fname = d.filename || "download";
+
+      if (currentState === "completed") {
+        document.title = `✔ 100% — ${fname}`;
+      } else if (currentState === "paused") {
+        document.title = `⏸ ${Math.round(pct)}% — ${fname}`;
+      } else if (currentState === "failed") {
+        document.title = `⚠ Error — ${fname}`;
+      } else {
+        document.title = `${Math.round(pct)}% — ${fname}`;
+      }
+
+      document.getElementById("urlLine").textContent = d.url || "";
+      document.getElementById("urlLine").title = d.url || "";
+      document.getElementById("valFilename").textContent = fname;
+      document.getElementById("valFilename").title = fname;
+
+      const statusEl = document.getElementById("valStatus");
+      if (currentState === "completed") {
+        statusEl.textContent = "✔ Download complete!";
+        statusEl.className = "kv-val status-completed";
+      } else if (currentState === "merging") {
+        statusEl.textContent = d.statusText || "Processing media stream (FFmpeg)...";
+        statusEl.className = "kv-val status-receiving";
+      } else if (currentState === "paused") {
+        statusEl.textContent = "Paused (Ready to resume)";
+        statusEl.className = "kv-val status-paused";
+      } else if (currentState === "failed") {
+        statusEl.textContent = d.errorMessage ? `Error: ${d.errorMessage}` : "Transfer error — click Retry";
+        statusEl.className = "kv-val status-failed";
+      } else {
+        statusEl.textContent = d.statusText || (currentState === "probing" ? "Connecting & negotiating stream..." : "Receiving data...");
+        statusEl.className = "kv-val status-receiving";
+      }
+
+      document.getElementById("valSize").textContent =
+        d.totalBytes && d.totalBytes > 0
+          ? formatBytes(d.totalBytes)
+          : currentState === "completed" && d.downloadedBytes > 0
+            ? formatBytes(d.downloadedBytes)
+            : "Calculating...";
+
+      document.getElementById("valDownloaded").textContent =
+        `${formatBytes(d.downloadedBytes || 0)} ( ${pctStr}% )`;
+
+      document.getElementById("valSpeed").textContent =
+        d.bytesPerSec && d.bytesPerSec > 0 ? `${formatBytes(d.bytesPerSec)}/sec` : "--";
+
+      document.getElementById("valEta").textContent = formatEtaLong(d.etaSeconds, currentState);
+
+      const pctBig = document.getElementById("valPctBig");
+      pctBig.textContent = `${pctStr}%`;
+      pctBig.className = currentState === "completed" ? "pct-big done" : "pct-big";
+
+      const bar = document.getElementById("barFill");
+      bar.style.width = `${pct}%`;
+      bar.className =
+        "bar-fill" +
+        (currentState === "completed"
+          ? " completed"
+          : currentState === "paused"
+            ? " paused"
+            : currentState === "failed"
+              ? " failed"
+              : "");
+
+      const activeCtrls = document.getElementById("activeControls");
+      const doneCtrls = document.getElementById("completedControls");
+      const btnPause = document.getElementById("btnPauseResume");
+
+      if (currentState === "completed") {
+        activeCtrls.classList.add("hidden");
+        doneCtrls.classList.remove("hidden");
+        if (!completionTriggered) {
+          completionTriggered = true;
+          if (chkAutoOpenFolder.checked) {
+            fetch("/api/open-folder", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ download_id: downloadId }),
+            });
+          }
+          if (chkAutoClose.checked) {
+            setTimeout(() => window.close(), 700);
+          }
+        }
+      } else {
+        activeCtrls.classList.remove("hidden");
+        doneCtrls.classList.add("hidden");
+        if (currentState === "paused") {
+          btnPause.textContent = "▶ Resume";
+          btnPause.className = "btn btn-primary";
+        } else if (currentState === "failed") {
+          btnPause.textContent = "↻ Retry";
+          btnPause.className = "btn btn-primary";
+        } else {
+          btnPause.textContent = "⏸ Pause";
+          btnPause.className = "btn btn-secondary";
+        }
+      }
+
+      const chunks = Array.isArray(d.chunks) ? d.chunks : [];
+      const strip = document.getElementById("segStrip");
+      const tbody = document.getElementById("connTableBody");
+
+      if (chunks.length > 0) {
+        strip.innerHTML = "";
+        let rowsHtml = "";
+        chunks.forEach((c, idx) => {
+          const cTot = Math.max(1, c.endByte - c.startByte + 1);
+          const cDl = Math.max(0, c.currentByte - c.startByte);
+          const cPct = c.status === "completed" ? 100 : Math.min(100, (cDl / cTot) * 100);
+
+          const cell = document.createElement("div");
+          cell.className = `seg-cell${c.status === "completed" ? " completed" : ""}`;
+          cell.innerHTML = `<div class="seg-cell-fill" style="width:${cPct.toFixed(1)}%"></div>`;
+          strip.appendChild(cell);
+
+          let infoTxt = "Waiting...";
+          if (c.status === "completed" || currentState === "completed") infoTxt = "Completed";
+          else if (currentState === "merging") infoTxt = d.statusText || "FFmpeg processing...";
+          else if (c.status === "downloading") infoTxt = "Receiving data...";
+          else if (c.status === "paused") infoTxt = "Paused";
+          else if (c.status === "failed") infoTxt = "Disconnected";
+
+          rowsHtml += `<tr><td>${idx + 1}</td><td>${formatBytes(cDl)}</td><td>${infoTxt}</td></tr>`;
+        });
+        tbody.innerHTML = rowsHtml;
+      } else if (currentState === "completed") {
+        strip.innerHTML = `<div class="seg-cell completed"><div class="seg-cell-fill" style="width:100%"></div></div>`;
+        tbody.innerHTML = `<tr><td>1</td><td>${formatBytes(d.downloadedBytes || d.totalBytes || 0)}</td><td>Completed & verified on disk</td></tr>`;
+      }
+    }
+
+    const ws = new WebSocket(`ws://${window.location.host}/?role=progress`);
+
+    function sendAction(action, payload = {}) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action, payload }));
+      }
+    }
+
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "download_progress" && msg.data?.downloadId === downloadId) {
+          renderProgress(msg.data);
+        } else if (msg.type === "download_removed" && msg.data?.downloadId === downloadId) {
+          window.close();
+        } else if (msg.type === "speed_limit_updated") {
+          updateSpeedCapLabel(msg.data?.bytes_per_sec || 0);
+        } else if (msg.type === "app_shutdown") {
+          window.close();
+        }
+      } catch (_) {}
+    };
+
+    document.getElementById("btnPauseResume").onclick = () => {
+      if (currentState === "paused") sendAction("resume_download", { download_id: downloadId });
+      else if (currentState === "failed") sendAction("retry_download", { download_id: downloadId });
+      else sendAction("pause_download", { download_id: downloadId });
+    };
+
+    document.getElementById("btnCancel").onclick = () => {
+      sendAction("cancel_download", { download_id: downloadId });
+      setTimeout(() => window.close(), 120);
+    };
+
+    document.getElementById("btnOpenFolder").onclick = () => {
+      fetch("/api/open-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ download_id: downloadId }),
+      });
+    };
+
+    document.getElementById("btnCloseDone").onclick = () => window.close();
+
+    function applyBps(bps, saveKbpsSetting = true) {
+      updateSpeedCapLabel(bps);
+      fetch("/api/speed-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bytes_per_sec: bps,
+          save_kbps: saveKbpsSetting ? Math.round(bps / 1024) : undefined,
+          startup_enabled: document.getElementById("chkStartupSpeedLimit").checked,
+        }),
+      });
+    }
+
+    function updateSpeedCapLabel(bps) {
+      const lbl = document.getElementById("lblCurrentCap");
+      lbl.textContent = !bps || bps <= 0 ? "Unlimited" : `${formatBytes(bps)}/sec`;
+      if (bps && bps > 0) {
+        const kbps = Math.round(bps / 1024);
+        if (kbps >= 1024 && kbps % 1024 === 0) {
+          document.getElementById("customSpeedVal").value = String(kbps / 1024);
+          document.getElementById("customSpeedUnit").value = "mbps";
+        } else {
+          document.getElementById("customSpeedVal").value = String(kbps);
+          document.getElementById("customSpeedUnit").value = "kbps";
+        }
+      }
+      document.querySelectorAll(".speed-preset").forEach((b) => {
+        b.className = Number(b.dataset.bps) === Number(bps || 0) ? "btn btn-primary speed-preset" : "btn btn-secondary speed-preset";
+      });
+    }
+
+    document.getElementById("btnApplyCustomSpeed").onclick = () => {
+      const val = Math.max(1, parseFloat(document.getElementById("customSpeedVal").value) || 0);
+      const unit = document.getElementById("customSpeedUnit").value;
+      const bps = Math.round(unit === "mbps" ? val * 1048576 : val * 1024);
+      applyBps(bps, true);
+    };
+
+    document.getElementById("btnDisableSpeedLimit").onclick = () => applyBps(0, false);
+
+    document.getElementById("chkStartupSpeedLimit").onchange = () => {
+      sendAction("update_settings", { speed_limit_startup: document.getElementById("chkStartupSpeedLimit").checked });
+    };
+
+    document.querySelectorAll(".speed-preset").forEach((btn) => {
+      btn.onclick = () => applyBps(Number(btn.dataset.bps), Number(btn.dataset.bps) > 0);
+    });
+
+    async function fetchInitialSnapshot() {
+      try {
+        const res = await fetch(`/api/download-item?id=${encodeURIComponent(downloadId)}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.data) renderProgress(json.data);
+        if (json.speedLimitBytesPerSec !== undefined) updateSpeedCapLabel(json.speedLimitBytesPerSec);
+        if (json.settings) {
+          document.getElementById("chkStartupSpeedLimit").checked = !!json.settings.speed_limit_startup;
+        }
+      } catch (_) {}
+    }
+
+    fetchInitialSnapshot();
+  </script>
+</body>
+</html>

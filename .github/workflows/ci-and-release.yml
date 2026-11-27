@@ -1,0 +1,77 @@
+name: CI & Integrity Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional tag (e.g. v3.5.0) to build & attach installer assets"
+        required: false
+        default: ""
+
+jobs:
+  test:
+    name: Automated E2E & UTF-8 Integrity Suite (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24 (Native SQLite WAL)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Syntax Validation
+        shell: pwsh
+        run: |
+          Get-ChildItem src, extension, tests -Recurse -Include *.js, *.mjs | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Syntax error in $($_.FullName)" }
+          }
+
+      - name: Run Unit, E2E & UTF-8 Integrity Tests
+        shell: pwsh
+        env:
+          WARPDM_HEADLESS_TEST: "1"
+          HOGRA_HEADLESS_TEST: "1"
+        run: |
+          node --test (Get-ChildItem tests/*.test.mjs | ForEach-Object { $_.FullName })
+
+  release:
+    name: Build Standalone WarpDMSetup.exe & Extensions
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Portable Node.js Runtime
+        shell: pwsh
+        run: ./scripts/fetch-runtime.ps1
+
+      - name: Build Monolithic Installer (WarpDMSetup.exe)
+        shell: pwsh
+        env:
+          REL_TAG: ${{ inputs.release_tag }}
+        run: |
+          ./Build-Installer.ps1
+          Copy-Item .\WarpDMSetup.exe ".\WarpDMSetup-$env:REL_TAG-x64.exe"
+          Copy-Item .\WarpDM-Firefox.xpi ".\WarpDM-Firefox-$env:REL_TAG.xpi"
+          Compress-Archive -Path .\extension\* -DestinationPath ".\WarpDM-Extension-$env:REL_TAG.zip" -Force
+
+      - name: Publish GitHub Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          generate_release_notes: true
+          files: |
+            WarpDMSetup-*-x64.exe
+            WarpDM-Extension-*.zip
+            WarpDM-Firefox-*.xpi

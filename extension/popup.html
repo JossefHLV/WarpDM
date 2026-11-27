@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WarpDM — Warp Download Manager</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 340px;
+      margin: 0;
+      padding: 15px;
+      background: #111820;
+      color: #f3f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #263547;
+      padding-bottom: 11px;
+      margin-bottom: 12px;
+    }
+    .logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f3f5f7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+    .logo span {
+      color: #35d5e8;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .status-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #161f2a;
+      color: #94a3b8;
+    }
+    .status-badge.connected {
+      background: rgba(53, 213, 232, 0.15);
+      color: #35d5e8;
+      border: 1px solid rgba(53, 213, 232, 0.4);
+    }
+    .card {
+      background: #161f2a;
+      border: 1px solid #263547;
+      border-radius: 10px;
+      padding: 11px;
+      margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #35d5e8;
+      margin-bottom: 7px;
+    }
+    .video-title {
+      font-size: 12px;
+      color: #f3f5f7;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px 10px;
+      background: #1f2b3a;
+      border: 1px solid #263547;
+      border-radius: 7px;
+      color: #f3f5f7;
+      font-size: 12px;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: #35d5e8;
+    }
+    .btn {
+      width: 100%;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #22b8d6, #117a98);
+      color: #ffffff;
+      border: none;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline {
+      background: #1f2b3a;
+      border: 1px solid #263547;
+      color: #dce6f0;
+      margin-top: 4px;
+    }
+    .stream-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .stream-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px;
+      background: #1e293b;
+      border-radius: 6px;
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+    .stream-item:hover {
+      background: rgba(2, 132, 199, 0.35);
+    }
+    .s-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+    }
+    .s-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #cbd5e1;
+      padding: 4px 0;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <img src="icons/icon32.png" alt="WarpDM" />
+      <div>WarpDM <span>v3.5.0</span></div>
+    </div>
+    <div id="statusBadge" class="status-badge">Checking...</div>
+  </div>
+
+  <!-- Active Video Card (Resolved per-post permalink on YouTube / X / Instagram / TikTok / Reddit / Facebook / Kick) -->
+  <div id="videoCard" class="card hidden">
+    <div class="card-title">🎬 Active Video on Tab</div>
+    <div id="videoTitle" class="video-title">Video Ready</div>
+    <select id="videoQualitySelect">
+      <option value="best">Best Quality (Auto 4K / 1080p MP4)</option>
+      <option value="1080p">1080p Full HD (MP4)</option>
+      <option value="720p">720p HD (MP4)</option>
+      <option value="480p">480p SD (MP4)</option>
+      <option value="audio-mp3">Audio Only — MP3</option>
+    </select>
+    <button id="downloadVideoBtn" class="btn">Download Video with WarpDM</button>
+  </div>
+
+  <!-- Sniffed HLS / DASH / MP4 Streams on Any Generic Website -->
+  <div id="streamsCard" class="card hidden">
+    <div class="card-title">📡 Sniffed Media Streams</div>
+    <div id="streamsList" class="stream-list"></div>
+  </div>
+
+  <!-- Direct URL Download -->
+  <div class="card">
+    <div class="card-title">⬇ Add URL to WarpDM</div>
+    <input type="text" id="urlInput" placeholder="Paste any file or video URL..." />
+    <button id="downloadBtn" class="btn">Start Download</button>
+  </div>
+
+  <div class="card" style="margin-bottom: 8px;">
+    <label class="toggle-row">
+      <span>Auto-capture browser downloads</span>
+      <input type="checkbox" id="chkAutoCapture" checked />
+    </label>
+    <label class="toggle-row">
+      <span>Show video player download button</span>
+      <input type="checkbox" id="chkFloatingBtn" checked />
+    </label>
+  </div>
+
+  <button id="openUiBtn" class="btn btn-outline">Open WarpDM Workspace</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
